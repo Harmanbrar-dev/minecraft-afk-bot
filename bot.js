@@ -1,133 +1,55 @@
 const mineflayer = require('mineflayer')
 
-const bot = mineflayer.createBot({
-  host: 'khushigaming.com',
-  username: 'blazeeye',
-  version: false
-})
+function createBot() {
 
-const password = 'harmangt3'
-const owner = 'harmangt3'
+  const bot = mineflayer.createBot({
+    host: 'khushigaming.com',
+    username: 'blazeeye'
+  })
 
-let warned = false
+  bot.once('spawn', () => {
 
-bot.once('spawn', () => {
+    console.log('Joined lobby')
 
-  console.log('Joined server')
+    // Step 1: login
+    setTimeout(() => {
+      bot.chat('/login harmangt3')
+      console.log('Logged in')
+    }, 3000)
 
-  setTimeout(() => {
-    bot.chat(`/login ${password}`)
-  }, 3000)
-
-  setTimeout(() => {
-
-    const clock = bot.inventory.slots[36]
-
-    if (clock) {
+    // Step 2: open clock selector (hotbar slot 1 = index 0)
+    setTimeout(() => {
+      bot.setQuickBarSlot(0)
       bot.activateItem()
-    }
+      console.log('Opened selector menu')
+    }, 7000)
 
-  }, 8000)
+  })
 
-})
+  // Step 3: click Survival head in GUI
+  bot.on('windowOpen', (window) => {
 
-bot.on('windowOpen', window => {
-
-  if (window.title.includes('Server')) {
+    console.log('Selector GUI opened')
 
     setTimeout(() => {
 
+      // Survival head slot from your screenshot
       bot.clickWindow(13, 0, 0)
 
-      console.log('Clicked survival server')
+      console.log('Clicked Survival server')
 
     }, 2000)
 
-  }
-
-})
-
-setInterval(() => {
-
-  const chest = bot.findBlock({
-    matching: block => block.name.includes('chest'),
-    maxDistance: 5
   })
 
-  if (!chest) return
+  // reconnect automatically if kicked
+  bot.on('end', () => {
+    console.log('Disconnected — reconnecting...')
+    setTimeout(createBot, 5000)
+  })
 
-  bot.openContainer(chest).then(container => {
+  bot.on('error', err => console.log(err))
 
-    const full = container.slots.every(slot => slot !== null)
+}
 
-    if (full && !warned) {
-
-      console.log('🌵 CACTUS STORAGE FULL')
-      warned = true
-
-    }
-
-    if (!full) warned = false
-
-    container.close()
-
-  }).catch(() => {})
-
-}, 60000)
-
-
-bot.on('chat', (username, message) => {
-
-  if (username !== owner) return
-
-  if (message === 'status') {
-
-    bot.chat('Bot online and checking cactus storage')
-
-  }
-
-  if (message === 'pos') {
-
-    bot.chat(`Position: ${bot.entity.position}`)
-
-  }
-
-  if (message === 'check') {
-
-    bot.chat('Checking chest now')
-
-    const chest = bot.findBlock({
-      matching: block => block.name.includes('chest'),
-      maxDistance: 5
-    })
-
-    if (!chest) {
-
-      bot.chat('Chest not found')
-      return
-    }
-
-    bot.openContainer(chest).then(container => {
-
-      const full = container.slots.every(slot => slot !== null)
-
-      if (full) {
-
-        bot.chat('Chest FULL')
-
-      } else {
-
-        bot.chat('Chest not full')
-
-      }
-
-      container.close()
-
-    })
-
-  }
-
-})
-
-
-setInterval(() => {}, 60000)
+createBot()
